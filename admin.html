@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xona TSA — Administration</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="screen" style="padding-bottom:24px;">
+    <div class="topbar"><h2>Administration</h2></div>
+
+    <div class="tabs">
+      <button class="active" id="tab-btn-users">Utilisateurs</button>
+      <button id="tab-btn-events">Événements</button>
+    </div>
+
+    <div id="panel-users" class="tab-panel active"></div>
+    <div id="panel-events" class="tab-panel"></div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    // Accès admin uniquement. Ce rôle n'est jamais choisi depuis la page
+    // publique de choix de profil : il est attribué en base (Firestore).
+    const user = guardRole('admin');
+
+    const roleLabel = { organizer: 'Organisateur', participant: 'Participant', admin: 'Admin' };
+
+    const panelUsers = document.getElementById('panel-users');
+    MOCK_USERS.forEach(u => {
+      const div = document.createElement('div');
+      div.className = 'list-item';
+      div.innerHTML = `
+        <div class="grow">
+          <div class="li-title">${u.email}</div>
+          <div class="li-sub">${roleLabel[u.role]} · ${u.country || '—'}</div>
+        </div>
+        <button class="icon-btn" title="Modifier le rôle">🛠️</button>
+        <button class="icon-btn danger" title="Supprimer">🗑️</button>`;
+      panelUsers.appendChild(div);
+    });
+
+    const panelEvents = document.getElementById('panel-events');
+    MOCK_EVENTS.forEach(e => {
+      const div = document.createElement('div');
+      div.className = 'list-item';
+      div.innerHTML = `
+        <div class="grow">
+          <div class="li-title">${e.title}</div>
+          <div class="li-sub">${e.city}, ${e.country} · ${e.ticketsSold}/${e.ticketsAvailable} vendus</div>
+        </div>
+        <button class="icon-btn" title="Modifier">✏️</button>
+        <button class="icon-btn danger" title="Supprimer">🗑️</button>`;
+      panelEvents.appendChild(div);
+    });
+
+    const tabBtnUsers = document.getElementById('tab-btn-users');
+    const tabBtnEvents = document.getElementById('tab-btn-events');
+    tabBtnUsers.addEventListener('click', () => {
+      tabBtnUsers.classList.add('active'); tabBtnEvents.classList.remove('active');
+      panelUsers.classList.add('active'); panelEvents.classList.remove('active');
+    });
+    tabBtnEvents.addEventListener('click', () => {
+      tabBtnEvents.classList.add('active'); tabBtnUsers.classList.remove('active');
+      panelEvents.classList.add('active'); panelUsers.classList.remove('active');
+    });
+
+    // TODO: brancher les actions (modifier rôle, supprimer utilisateur,
+    // modifier/supprimer événement) sur Firestore avec vérification
+    // côté serveur que l'appelant a bien le rôle "admin".
+  </script>
+</body>
+</html>

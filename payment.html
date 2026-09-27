@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xona TSA — Paiement</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="screen">
+    <div class="topbar">
+      <div class="back" onclick="history.back()">←</div>
+      <h2>Paiement</h2>
+    </div>
+
+    <h2 id="event-title" style="font-size:18px;"></h2>
+    <p class="subtitle" id="event-place" style="margin-bottom:24px;"></p>
+
+    <label class="field-label">Nombre de tickets</label>
+    <div class="stepper">
+      <button id="minus">−</button>
+      <span class="qty" id="qty">1</span>
+      <button id="plus">+</button>
+    </div>
+
+    <label class="field-label">Moyen de paiement</label>
+    <label class="radio-row"><input type="radio" name="method" value="Mobile Money" checked> Mobile Money</label>
+    <label class="radio-row"><input type="radio" name="method" value="Carte bancaire"> Carte bancaire</label>
+
+    <div class="grow"></div>
+    <div class="row" style="justify-content:space-between;margin:16px 0 12px;">
+      <span style="color:var(--grey);">Total</span>
+      <span id="total" style="font-size:20px;font-weight:800;"></span>
+    </div>
+    <button class="btn btn-primary" id="confirm-btn">Confirmer le paiement</button>
+  </div>
+
+  <!-- Confirmation -->
+  <div class="modal-overlay" id="confirm-overlay">
+    <div class="modal-sheet blocking">
+      <div class="handle"></div>
+      <h2>Paiement confirmé</h2>
+      <p id="confirm-text" style="font-size:14px;line-height:1.5;"></p>
+      <button class="btn btn-primary" id="finish-btn">Terminer</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const user = guardRole('participant');
+    const event = MOCK_EVENTS.find(e => e.id === qs('id'));
+    if (!event) { window.location.href = 'events.html'; }
+
+    document.getElementById('event-title').textContent = event.title;
+    document.getElementById('event-place').textContent = `${event.city}, ${event.country}`;
+
+    let qty = 1;
+    const left = event.ticketsAvailable - event.ticketsSold;
+    const qtyEl = document.getElementById('qty');
+    const totalEl = document.getElementById('total');
+    const minusBtn = document.getElementById('minus');
+    const plusBtn = document.getElementById('plus');
+
+    function refresh() {
+      qtyEl.textContent = qty;
+      totalEl.textContent = formatFcfa(qty * event.priceFcfa);
+      minusBtn.disabled = qty <= 1;
+      plusBtn.disabled = qty >= left;
+    }
+    minusBtn.addEventListener('click', () => { if (qty > 1) { qty--; refresh(); } });
+    plusBtn.addEventListener('click', () => { if (qty < left) { qty++; refresh(); } });
+    refresh();
+
+    document.getElementById('confirm-btn').addEventListener('click', (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = 'Traitement en cours…';
+      const method = document.querySelector('input[name="method"]:checked').value;
+      setTimeout(() => {
+        document.getElementById('confirm-text').textContent =
+          `${qty} ticket(s) pour "${event.title}" — ${formatFcfa(qty * event.priceFcfa)} payé(s) via ${method}.`;
+        document.getElementById('confirm-overlay').classList.add('open');
+      }, 1500);
+    });
+
+    document.getElementById('finish-btn').addEventListener('click', () => {
+      window.location.href = 'events.html';
+    });
+  </script>
+</body>
+</html>

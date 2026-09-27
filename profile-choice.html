@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xona TSA — Choix de profil</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="screen" style="padding-bottom:110px;">
+    <h1>Qui êtes-vous ?</h1>
+    <p class="subtitle">Choisissez votre profil pour continuer.</p>
+
+    <div id="card-organizer" class="profile-card filled disabled">
+      <div class="grow">
+        <div class="pc-title">Organisateur événementiel</div>
+        <div class="pc-sub">Créez vos événements et vendez vos tickets numériques.</div>
+      </div>
+      <div>→</div>
+    </div>
+
+    <div id="card-participant" class="profile-card disabled">
+      <div class="grow">
+        <div class="pc-title">Participant</div>
+        <div class="pc-sub">Découvrez des événements et achetez vos tickets.</div>
+      </div>
+      <div>→</div>
+    </div>
+
+    <div style="height:18px;"></div>
+    <label class="field-label">Votre pays</label>
+    <div class="chip-row" id="country-chips"></div>
+
+    <hr class="divider">
+    <p class="legal-footer" id="about-text"></p>
+    <div class="legal-links">
+      <button class="btn-link" id="link-terms">Conditions d'utilisation</button>
+      <button class="btn-link" id="link-privacy">Politique de confidentialité</button>
+      <button class="btn-link" id="link-cookies">Cookies</button>
+    </div>
+  </div>
+
+  <!-- Modal légal (générique) -->
+  <div class="modal-overlay" id="legal-modal-overlay">
+    <div class="modal-sheet">
+      <div class="handle"></div>
+      <h2 class="modal-title"></h2>
+      <div class="modal-body" style="margin:12px 0;"></div>
+      <button class="btn btn-outline modal-close-x" id="modal-close-btn">Fermer</button>
+    </div>
+  </div>
+
+  <!-- Modal d'acceptation obligatoire (conditions + confidentialité) -->
+  <div class="modal-overlay open" id="gate-overlay">
+    <div class="modal-sheet blocking">
+      <div class="handle"></div>
+      <h2>Avant de continuer</h2>
+      <p style="font-size:13px;color:var(--grey);margin-top:0;">
+        Pour finaliser la création de votre compte, veuillez prendre connaissance
+        et accepter les documents suivants.
+      </p>
+      <button class="btn-link" style="text-align:left;margin-bottom:6px;" id="gate-terms">📄 Conditions d'utilisation</button>
+      <button class="btn-link" style="text-align:left;margin-bottom:6px;" id="gate-privacy">📄 Politique de confidentialité</button>
+      <label class="checkbox-row">
+        <input type="checkbox" id="gate-checkbox">
+        <span>J'ai lu et j'accepte les conditions d'utilisation et la politique de confidentialité.</span>
+      </label>
+      <button class="btn btn-primary" id="gate-continue" disabled>Continuer</button>
+    </div>
+  </div>
+
+  <!-- Bandeau cookies -->
+  <div class="cookie-banner" id="cookie-banner">
+    <p>Nous utilisons des cookies pour assurer le bon fonctionnement de l'application et améliorer votre expérience.</p>
+    <div class="row">
+      <button class="learn">En savoir plus</button>
+      <div class="spacer"></div>
+      <button class="decline">Refuser</button>
+      <button class="accept">Accepter</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const user = guardRole(null);
+    document.getElementById('about-text').textContent = LEGAL_TEXTS.about;
+
+    // ---- Modal légal générique ----
+    document.getElementById('modal-close-btn').addEventListener('click', closeLegalModal);
+    document.getElementById('link-terms').addEventListener('click', () => openLegalModal("Conditions d'utilisation", LEGAL_TEXTS.terms));
+    document.getElementById('link-privacy').addEventListener('click', () => openLegalModal('Politique de confidentialité', LEGAL_TEXTS.privacy));
+    document.getElementById('link-cookies').addEventListener('click', () => openLegalModal('Cookies', LEGAL_TEXTS.cookies));
+
+    // ---- Gate obligatoire (conditions + confidentialité) ----
+    const gateOverlay = document.getElementById('gate-overlay');
+    const gateCheckbox = document.getElementById('gate-checkbox');
+    const gateContinue = document.getElementById('gate-continue');
+
+    if (Session.legalAccepted) {
+      gateOverlay.classList.remove('open');
+    }
+    document.getElementById('gate-terms').addEventListener('click', () => openLegalModal("Conditions d'utilisation", LEGAL_TEXTS.terms));
+    document.getElementById('gate-privacy').addEventListener('click', () => openLegalModal('Politique de confidentialité', LEGAL_TEXTS.privacy));
+    gateCheckbox.addEventListener('change', () => { gateContinue.disabled = !gateCheckbox.checked; });
+    gateContinue.addEventListener('click', () => {
+      Session.legalAccepted = true;
+      gateOverlay.classList.remove('open');
+      refreshCardsState();
+    });
+
+    // ---- Cookies ----
+    initCookieBanner();
+
+    // ---- Pays ----
+    let selectedCountry = null;
+    const chipsWrap = document.getElementById('country-chips');
+    COUNTRIES.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'chip';
+      btn.textContent = c;
+      btn.addEventListener('click', () => {
+        selectedCountry = c;
+        [...chipsWrap.children].forEach(ch => ch.classList.remove('selected'));
+        btn.classList.add('selected');
+        refreshCardsState();
+      });
+      chipsWrap.appendChild(btn);
+    });
+
+    // ---- Cartes de profil ----
+    const cardOrganizer = document.getElementById('card-organizer');
+    const cardParticipant = document.getElementById('card-participant');
+
+    function refreshCardsState() {
+      const canContinue = Session.legalAccepted && !!selectedCountry;
+      cardOrganizer.classList.toggle('disabled', !canContinue);
+      cardParticipant.classList.toggle('disabled', !canContinue);
+    }
+
+    function selectProfile(role) {
+      if (!(Session.legalAccepted && selectedCountry)) return;
+      const u = Session.user || { id: 'demo_user', email: 'demo@xonatsa.app' };
+      u.role = role;
+      u.country = selectedCountry;
+      Session.user = u;
+      window.location.href = role === 'organizer' ? 'organizer-dashboard.html' : 'events.html';
+    }
+    cardOrganizer.addEventListener('click', () => selectProfile('organizer'));
+    cardParticipant.addEventListener('click', () => selectProfile('participant'));
+  </script>
+</body>
+</html>

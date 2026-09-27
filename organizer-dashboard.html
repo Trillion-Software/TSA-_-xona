@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xona TSA — Tableau de bord</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="screen" style="padding-bottom:16px;">
+    <div class="topbar"><h2>Tableau de bord</h2></div>
+
+    <div id="tab-events" class="tab-panel active">
+      <div id="events-list"></div>
+    </div>
+
+    <div id="tab-profile" class="tab-panel">
+      <h2 style="font-size:18px;">Profil organisateur</h2>
+      <div style="margin-top:16px;">
+        <div class="row" style="margin-bottom:12px;"><span style="width:140px;color:var(--grey);font-size:13px;">E-mail</span><span id="p-email" style="font-weight:600;font-size:13.5px;"></span></div>
+        <div class="row" style="margin-bottom:12px;"><span style="width:140px;color:var(--grey);font-size:13px;">Pays</span><span id="p-country" style="font-weight:600;font-size:13.5px;"></span></div>
+        <div class="row" style="margin-bottom:12px;"><span style="width:140px;color:var(--grey);font-size:13px;">Statut</span><span style="font-weight:600;font-size:13.5px;">En attente de vérification</span></div>
+      </div>
+      <p style="font-size:12px;color:var(--grey);">Ces informations ne sont visibles et modifiables que par vous.</p>
+    </div>
+  </div>
+
+  <button class="fab" id="new-event-btn">+ Nouvel événement</button>
+
+  <nav class="bottom-nav">
+    <a href="#" id="nav-events" class="active"><span class="icon">🗓️</span>Mes événements</a>
+    <a href="#" id="nav-profile"><span class="icon">👤</span>Profil</a>
+  </nav>
+
+  <script src="script.js"></script>
+  <script>
+    const user = guardRole('organizer');
+
+    // Droit strict : lecture/écriture uniquement sur ses propres événements.
+    const myEvents = MOCK_EVENTS.filter(e => Permissions.canEditEvent(user, e.organizerId));
+    const list = document.getElementById('events-list');
+    if (myEvents.length === 0) {
+      list.innerHTML = '<div class="empty-state">Aucun événement créé pour le moment.</div>';
+    } else {
+      myEvents.forEach(e => {
+        const div = document.createElement('div');
+        div.className = 'list-item';
+        div.innerHTML = `
+          <div class="grow">
+            <div class="li-title">${e.title}</div>
+            <div class="li-sub">${e.city}, ${e.country}</div>
+            <div class="li-sub">${e.ticketsSold}/${e.ticketsAvailable} tickets vendus</div>
+          </div>
+          <button class="icon-btn">✏️</button>`;
+        list.appendChild(div);
+      });
+    }
+
+    document.getElementById('p-email').textContent = user.email;
+    document.getElementById('p-country').textContent = user.country || '—';
+
+    document.getElementById('new-event-btn').addEventListener('click', () => {
+      alert("Formulaire de création d'événement — à venir");
+    });
+
+    const navEvents = document.getElementById('nav-events');
+    const navProfile = document.getElementById('nav-profile');
+    const tabEvents = document.getElementById('tab-events');
+    const tabProfile = document.getElementById('tab-profile');
+    const fab = document.getElementById('new-event-btn');
+
+    navEvents.addEventListener('click', (e) => {
+      e.preventDefault();
+      navEvents.classList.add('active'); navProfile.classList.remove('active');
+      tabEvents.classList.add('active'); tabProfile.classList.remove('active');
+      fab.style.display = 'block';
+    });
+    navProfile.addEventListener('click', (e) => {
+      e.preventDefault();
+      navProfile.classList.add('active'); navEvents.classList.remove('active');
+      tabProfile.classList.add('active'); tabEvents.classList.remove('active');
+      fab.style.display = 'none';
+    });
+  </script>
+</body>
+</html>

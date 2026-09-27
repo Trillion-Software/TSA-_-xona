@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xona TSA — Détail événement</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="screen">
+    <div class="topbar">
+      <div class="back" onclick="history.back()">←</div>
+      <h2 id="cat-title"></h2>
+    </div>
+
+    <h1 id="event-title"></h1>
+
+    <div class="row" style="gap:8px;margin-bottom:6px;font-size:13.5px;">📍 <span id="event-place"></span></div>
+    <div class="row" style="gap:8px;margin-bottom:6px;font-size:13.5px;">🗓️ <span id="event-date"></span></div>
+    <div class="row" style="gap:8px;margin-bottom:20px;font-size:13.5px;">🎟️ <span id="event-left"></span></div>
+
+    <hr class="divider">
+    <h2 style="font-size:15px;">À propos</h2>
+    <p style="color:var(--grey);line-height:1.5;font-size:13.5px;">
+      Description de l'événement fournie par l'organisateur (lieu précis, programme, informations pratiques).
+    </p>
+
+    <div class="grow"></div>
+    <div id="price" style="font-size:20px;font-weight:800;margin:16px 0 10px;"></div>
+    <button class="btn btn-primary" id="pay-btn">Payer mon ticket</button>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const user = guardRole('participant');
+    const event = MOCK_EVENTS.find(e => e.id === qs('id'));
+    if (!event) { window.location.href = 'events.html'; }
+
+    document.getElementById('cat-title').textContent = event.category;
+    document.getElementById('event-title').textContent = event.title;
+    document.getElementById('event-place').textContent = `${event.city}, ${event.country}`;
+    document.getElementById('event-date').textContent = formatDateFr(event.date, true);
+
+    const left = event.ticketsAvailable - event.ticketsSold;
+    const full = left <= 0;
+    document.getElementById('event-left').textContent = full ? 'Événement complet' : `${left} tickets restants`;
+    document.getElementById('price').textContent = formatFcfa(event.priceFcfa);
+
+    const payBtn = document.getElementById('pay-btn');
+    if (full || !Permissions.canPurchaseTicket(user)) {
+      payBtn.disabled = true;
+      payBtn.textContent = full ? 'Complet' : 'Paiement non autorisé';
+    } else {
+      payBtn.addEventListener('click', () => {
+        window.location.href = `payment.html?id=${event.id}`;
+      });
+    }
+  </script>
+</body>
+</html>

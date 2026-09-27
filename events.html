@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xona TSA — Événements</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="screen" style="padding-bottom:20px;">
+    <div class="topbar"><h2>Événements</h2></div>
+    <div class="chip-row" id="country-filters" style="margin-bottom:16px;"></div>
+    <div id="events-list"></div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const user = guardRole('participant');
+    let filterCountry = null;
+
+    function render() {
+      const filters = document.getElementById('country-filters');
+      filters.innerHTML = '';
+      const allBtn = document.createElement('button');
+      allBtn.className = 'chip' + (filterCountry === null ? ' selected' : '');
+      allBtn.textContent = 'Tous les pays';
+      allBtn.addEventListener('click', () => { filterCountry = null; render(); });
+      filters.appendChild(allBtn);
+
+      [...new Set(MOCK_EVENTS.map(e => e.country))].forEach(c => {
+        const b = document.createElement('button');
+        b.className = 'chip' + (filterCountry === c ? ' selected' : '');
+        b.textContent = c;
+        b.addEventListener('click', () => { filterCountry = c; render(); });
+        filters.appendChild(b);
+      });
+
+      const list = document.getElementById('events-list');
+      list.innerHTML = '';
+      const events = MOCK_EVENTS
+        .filter(e => !filterCountry || e.country === filterCountry)
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      if (events.length === 0) {
+        list.innerHTML = '<div class="empty-state">Aucun événement dans ce pays pour le moment.</div>';
+        return;
+      }
+
+      events.forEach(e => {
+        const left = e.ticketsAvailable - e.ticketsSold;
+        const full = left <= 0;
+        const a = document.createElement('a');
+        a.className = 'event-card';
+        a.href = `event-detail.html?id=${e.id}`;
+        a.innerHTML = `
+          <div class="grow">
+            <div class="cat">${e.category}</div>
+            <div class="title">${e.title}</div>
+            <div class="meta">${e.city}, ${e.country}</div>
+            <div class="meta">${formatDateFr(e.date)}</div>
+          </div>
+          <div>
+            <div class="price">${formatFcfa(e.priceFcfa)}</div>
+            <div class="left ${full ? 'full' : ''}">${full ? 'Complet' : left + ' places'}</div>
+          </div>`;
+        list.appendChild(a);
+      });
+    }
+    render();
+  </script>
+</body>
+</html>
